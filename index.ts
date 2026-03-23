@@ -7,10 +7,7 @@ import { developers } from "./db/schema";
 import { eq } from "drizzle-orm";
 import { AsyncLocalStorage } from "node:async_hooks"; // 1. IMPORT THIS
 
-import { githubApp } from "./apps/github";
 import { auth } from "./routes/auth";
-import { gmailApp } from "./apps/gmail";
-import { notionApp } from "./apps/notion";
 import { coreApp } from "./apps/core";
 
 // 2. CREATE THE CONTEXT STORE

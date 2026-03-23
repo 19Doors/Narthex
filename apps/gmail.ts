@@ -7,6 +7,8 @@ import { and, eq } from "drizzle-orm";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
 
+const BASE_URL = process.env.BASE_URL;
+const BASE_PORT = process.env.BASE_PORT;
 // ============================================================
 //  1. EMAIL ENCODING UTILITY
 // ============================================================
@@ -88,7 +90,7 @@ async function gmailRequest(
   });
 
   if (!connection) {
-    const authUrl = `http://localhost:3003/auth/google?devId=${context.developerId}&userId=${context.endUserId}`;
+    const authUrl = `${BASE_URL}:${BASE_PORT}/auth/google?devId=${context.developerId}&userId=${context.endUserId}`;
     return {
       content: [
         {
@@ -122,7 +124,7 @@ async function gmailRequest(
       if (newToken) {
         response = await makeRequest(newToken);
       } else {
-        const authUrl = `http://localhost:3003/auth/google?devId=${context.developerId}&userId=${context.endUserId}`;
+        const authUrl = `${BASE_URL}:${BASE_PORT}/auth/google?devId=${context.developerId}&userId=${context.endUserId}`;
         return {
           content: [
             { type: "text", text: `Session expired. Re-authorize: ${authUrl}` },
@@ -203,9 +205,7 @@ function extractBody(payload: any): { plain: string; html: string } {
 }
 
 /** Collect attachment metadata from a message payload. */
-function extractAttachments(
-  payload: any,
-): {
+function extractAttachments(payload: any): {
   filename: string;
   mimeType: string;
   size: number;

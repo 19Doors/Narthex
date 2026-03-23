@@ -3,6 +3,9 @@ import { db } from "../db";
 import { connections } from "../db/schema";
 import { and, eq } from "drizzle-orm";
 
+const BASE_URL = process.env.BASE_URL;
+const BASE_PORT = process.env.BASE_PORT;
+
 // --- 1. THE CORE API WRAPPER ---
 // This handles the Drizzle lookup, Auth Fallback, and HTTP requests for EVERY tool.
 async function githubRequest(
@@ -19,7 +22,7 @@ async function githubRequest(
   });
 
   if (!connection) {
-    const authUrl = `http://localhost:3000/auth/github?devId=${context.developerId}&userId=${context.endUserId}`;
+    const authUrl = `${BASE_URL}:${BASE_PORT}/auth/github?devId=${context.developerId}&userId=${context.endUserId}`;
     return {
       content: [
         {

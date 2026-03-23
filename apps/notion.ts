@@ -8,7 +8,9 @@ import { and, eq } from "drizzle-orm";
 
 const NOTION_API_VERSION = "2022-06-28";
 const NOTION_BASE_URL = "https://api.notion.com/v1";
-const BASE_URL = "http://localhost:3003";
+
+const BASE_URL = process.env.BASE_URL;
+const BASE_PORT = process.env.BASE_PORT;
 
 async function notionRequest(
   endpoint: string,
@@ -24,7 +26,7 @@ async function notionRequest(
   });
 
   if (!connection) {
-    const authUrl = `${BASE_URL}/auth/notion?devId=${context.developerId}&userId=${context.endUserId}`;
+    const authUrl = `${BASE_URL}:${BASE_PORT}/auth/notion?devId=${context.developerId}&userId=${context.endUserId}`;
     return {
       content: [
         {

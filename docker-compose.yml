@@ -1,0 +1,59 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: narthex-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: nathrax
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: oven/bun:latest
+    container_name: narthex-app
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://postgres:mysecretpassword@db:5432/nathrax
+    ports:
+      - "${BASE_PORT:-3000}:${BASE_PORT:-3000}"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "bun install && bunx drizzle-kit push && bun run index.ts"
+
+  studio:
+    image: oven/bun:latest
+    container_name: narthex-studio
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - .:/app                  # same codebase, shares node_modules
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://postgres:mysecretpassword@db:5432/nathrax
+    ports:
+      - "4983:4983"
+    depends_on:
+      db:
+        condition: service_healthy
+      app:                      # wait for app (ensures bun install is done)
+        condition: service_started
+    command: sh -c "bunx drizzle-kit studio --host 0.0.0.0"
+
+volumes:
+  pgdata:
