@@ -52,14 +52,23 @@ export const coreApp = {
           .filter(({ matchCount }) => matchCount > 0)
           .sort((a, b) => b.matchCount - a.matchCount)
           .map(({ tool: t }) => {
-            const patchedSchema =
-              t.schema instanceof z.ZodObject
-                ? t.schema.extend(baseShape)
-                : z.object({ ...baseShape, ...(t.schema as any).shape });
+            // const patchedSchema =
+            //   t.schema instanceof z.ZodObject
+            //     ? t.schema.extend(baseShape)
+            //     : z.object({ ...baseShape, ...(t.schema as any).shape });
+
+            const json = zodToJsonSchema(t.schema) as any;
+
+            // zodToJsonSchema on z.object({}) gives just {$schema: ...} with no properties key
+            const cleanSchema = {
+              type: "object",
+              properties: json.properties ?? {},
+              required: json.required ?? [],
+            };
             return {
               name: t.name,
               description: t.description,
-              schema: zodToJsonSchema(patchedSchema),
+              schema: cleanSchema,
             };
           });
 
