@@ -110,7 +110,7 @@ app.all("/mcp", async (c) => {
 
 // 6. BUN NATIVE EXPORT
 // We don't need @hono/node-server anymore!
-const port = 3003;
+const port = process.env.BASE_PORT;
 console.log(`🛡️ Nathrax Gateway running on http://localhost:${port}/mcp`);
 
 export default {
