@@ -4,6 +4,9 @@ import { githubApp } from "./github";
 import { gmailApp } from "./gmail";
 import { notionApp } from "./notion";
 import { runInSandbox } from "./sandbox";
+import { calendarApp } from "./gcalendar";
+import { driveApp } from "./gdrive";
+import { sheetsApp } from "./gsheets";
 
 const baseShape = {
   statusToShow: z
@@ -13,7 +16,14 @@ const baseShape = {
     ),
 };
 
-export const allApps = [githubApp, gmailApp, notionApp];
+export const allApps = [
+  githubApp,
+  gmailApp,
+  calendarApp,
+  driveApp,
+  sheetsApp,
+  notionApp,
+];
 const allTools = allApps.flatMap((app) => app.tools);
 
 export const coreApp = {

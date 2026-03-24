@@ -63,6 +63,10 @@ auth.get("/:appId", (c) => {
       // "https://www.googleapis.com/auth/gmail.modify",
       // "https://www.googleapis.com/auth/gmail.settings.basic",
       "https://mail.google.com/",
+      "https://www.googleapis.com/auth/drive",
+      "https://www.googleapis.com/auth/spreadsheets",
+      "https://www.googleapis.com/auth/documents",
+      "https://www.googleapis.com/auth/calendar",
     ].join(" ");
 
     const googleUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code&scope=${scopes}&state=${state}&access_type=offline&prompt=consent`;
