@@ -91,7 +91,7 @@ activeApps.forEach((app) => {
       tool.name,
       {
         description: tool.description,
-        inputSchema: tool.schema,
+        inputSchema: patchedSchema,
       },
       async (args: any) => {
         // 5. EXTRACT THE REAL CONTEXT DYNAMICALLY!

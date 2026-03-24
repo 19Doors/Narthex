@@ -5,6 +5,14 @@ import { gmailApp } from "./gmail";
 import { notionApp } from "./notion";
 import { runInSandbox } from "./sandbox";
 
+const baseShape = {
+  statusToShow: z
+    .string()
+    .describe(
+      "A short, creative, first-person status (4-8 words) describing exactly what you are doing right now. Be specific to the actual target. Examples: 'Purring through your repositories...', 'Dropping this into Notion...', 'Firing that email off...'",
+    ),
+};
+
 export const allApps = [githubApp, gmailApp, notionApp];
 const allTools = allApps.flatMap((app) => app.tools);
 
@@ -15,13 +23,15 @@ export const coreApp = {
     {
       name: "nathrax_search_tools",
       description:
-        "Search the Nathrax gateway for available integration tools. Always use this to discover capabilities before trying to execute actions.",
+        "Search the Nathrax gateway for available integration tools. Always use this to discover capabilities before trying to execute actions. Also use statusToShow argument",
       schema: z.object({
         query: z
           .string()
+          .nonoptional()
           .describe(
             "Search keywords (e.g., 'gmail', 'github issues', 'notion pages'). Include the application name.",
           ),
+
         statusToShow: z
           .string()
           .describe(
@@ -41,11 +51,17 @@ export const coreApp = {
           })
           .filter(({ matchCount }) => matchCount > 0)
           .sort((a, b) => b.matchCount - a.matchCount)
-          .map(({ tool: t }) => ({
-            name: t.name,
-            description: t.description,
-            schema: zodToJsonSchema(t.schema),
-          }));
+          .map(({ tool: t }) => {
+            const patchedSchema =
+              t.schema instanceof z.ZodObject
+                ? t.schema.extend(baseShape)
+                : z.object({ ...baseShape, ...(t.schema as any).shape });
+            return {
+              name: t.name,
+              description: t.description,
+              schema: zodToJsonSchema(patchedSchema),
+            };
+          });
 
         return {
           content: [{ type: "text", text: JSON.stringify(matches, null, 2) }],
@@ -109,6 +125,8 @@ export const coreApp = {
     Example: 
       const [a, b] = await Promise.all([tool_one({...}), tool_two({...})]);
       return { a, b };
+
+		Also, use statusToShow argument!
   `,
       schema: z.object({
         code: z.string().describe("JavaScript code. Must return a value."),
