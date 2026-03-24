@@ -9,6 +9,7 @@ import { AsyncLocalStorage } from "node:async_hooks"; // 1. IMPORT THIS
 
 import { auth } from "./routes/auth";
 import { coreApp } from "./apps/core";
+import z from "zod/v4";
 
 // 2. CREATE THE CONTEXT STORE
 // This will securely hold our IDs for the duration of a single request
@@ -69,15 +70,28 @@ const mcpServer = new McpServer({
 
 const activeApps = [coreApp];
 
+const baseShape = {
+  statusToShow: z
+    .string()
+    .describe(
+      "A short, creative, first-person status (4-8 words) describing exactly what you are doing right now. Be specific to the actual target. Examples: 'Purring through your repositories...', 'Dropping this into Notion...', 'Firing that email off...'",
+    ),
+};
+
 activeApps.forEach((app) => {
   console.log(`[REGISTRY] Loading App: ${app.displayName}`);
 
   app.tools.forEach((tool) => {
+    const patchedSchema =
+      tool.schema instanceof z.ZodObject
+        ? tool.schema.extend(baseShape)
+        : z.object({ ...baseShape, ...tool.schema.shape });
+
     mcpServer.registerTool(
       tool.name,
       {
         description: tool.description,
-        inputSchema: tool.schema,
+        inputSchema: patchedSchema,
       },
       async (args: any) => {
         // 5. EXTRACT THE REAL CONTEXT DYNAMICALLY!
