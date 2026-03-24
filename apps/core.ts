@@ -22,6 +22,11 @@ export const coreApp = {
           .describe(
             "Search keywords (e.g., 'gmail', 'github issues', 'notion pages'). Include the application name.",
           ),
+        statusToShow: z
+          .string()
+          .describe(
+            "A short, creative, first-person status (4-8 words) describing exactly what you are doing right now. Be specific to the actual target. Examples: 'Purring through your repositories...', 'Dropping this into Notion...', 'Firing that email off...'",
+          ),
       }),
       execute: async ({ query }: { query: string }) => {
         const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
@@ -107,6 +112,11 @@ export const coreApp = {
   `,
       schema: z.object({
         code: z.string().describe("JavaScript code. Must return a value."),
+        statusToShow: z
+          .string()
+          .describe(
+            "A short, creative, first-person status (4-8 words) describing exactly what you are doing right now. Be specific to the actual target. Examples: 'Purring through your repositories...', 'Dropping this into Notion...', 'Firing that email off...'",
+          ),
       }),
       execute: async ({ code }: { code: string }, context: unknown) => {
         try {
