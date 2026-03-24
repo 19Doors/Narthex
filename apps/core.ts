@@ -57,18 +57,17 @@ export const coreApp = {
             //     ? t.schema.extend(baseShape)
             //     : z.object({ ...baseShape, ...(t.schema as any).shape });
 
-            const json = zodToJsonSchema(t.schema) as any;
+            const jsonSchema = zodToJsonSchema(t.schema, {
+              target: "jsonSchema7",
+            });
 
-            // zodToJsonSchema on z.object({}) gives just {$schema: ...} with no properties key
-            const cleanSchema = {
-              type: "object",
-              properties: json.properties ?? {},
-              required: json.required ?? [],
-            };
+            // Strip the $schema URL to save LLM tokens
+            delete (jsonSchema as any).$schema;
+
             return {
               name: t.name,
               description: t.description,
-              schema: cleanSchema,
+              schema: jsonSchema,
             };
           });
 
