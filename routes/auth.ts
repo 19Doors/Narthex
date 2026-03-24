@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { db } from "../db";
-import { connections } from "../db/schema";
+import { connections, developers } from "../db/schema";
 
 const auth = new Hono();
 
@@ -16,6 +16,25 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
 const NOTION_CLIENT_ID = process.env.NOTION_CLIENT_ID;
 const NOTION_CLIENT_SECRET = process.env.NOTION_CLIENT_SECRET;
 const NOTION_API_VERSION = "2022-06-28";
+
+const ADMIN_SECRET = process.env.ADMIN_SECRET;
+
+auth.post("/developers/create", async (c) => {
+  const secret = c.req.header("x-admin-secret");
+
+  if (!ADMIN_SECRET || secret !== ADMIN_SECRET) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const apiKey = `narthex_${crypto.randomUUID().replace(/-/g, "")}`;
+
+  const [developer] = await db
+    .insert(developers)
+    .values({ apiKey })
+    .returning();
+
+  return c.json({ developerId: developer.id, apiKey });
+});
 
 auth.get("/:appId", (c) => {
   const appId = c.req.param("appId");
