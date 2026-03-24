@@ -50,13 +50,13 @@ auth.get("/:appId", (c) => {
   );
 
   if (appId === "github") {
-    const redirectUri = `${BASE_URL}:${BASE_PORT}/auth/github/callback`;
+    const redirectUri = `${BASE_URL}/auth/github/callback`;
     const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&state=${state}&scope=read:user repo`;
     return c.redirect(githubAuthUrl);
   }
 
   if (appId === "google") {
-    const redirectUri = `${BASE_URL}:${BASE_PORT}/auth/google/callback`;
+    const redirectUri = `${BASE_URL}/auth/google/callback`;
     const scopes = [
       "https://www.googleapis.com/auth/userinfo.email",
       // "https://www.googleapis.com/auth/gmail.send",
@@ -70,7 +70,7 @@ auth.get("/:appId", (c) => {
   }
 
   if (appId === "notion") {
-    const redirectUri = `${BASE_URL}:${BASE_PORT}/auth/notion/callback`;
+    const redirectUri = `${BASE_URL}/auth/notion/callback`;
     const notionUrl = `https://api.notion.com/v1/oauth/authorize?client_id=${NOTION_CLIENT_ID}&response_type=code&owner=user&redirect_uri=${redirectUri}&state=${state}`;
     return c.redirect(notionUrl);
   }
@@ -139,7 +139,7 @@ auth.get("/notion/callback", async (c) => {
     },
     body: JSON.stringify({
       grant_type: "authorization_code",
-      redirect_uri: `${BASE_URL}:${BASE_PORT}/auth/notion/callback`,
+      redirect_uri: `${BASE_URL}/auth/notion/callback`,
       code: code,
     }),
   });
@@ -181,7 +181,7 @@ auth.get("/google/callback", async (c) => {
       code,
       client_id: GOOGLE_CLIENT_ID,
       client_secret: GOOGLE_CLIENT_SECRET,
-      redirect_uri: `${BASE_URL}:${BASE_PORT}/auth/google/callback`,
+      redirect_uri: `${BASE_URL}/auth/google/callback`,
       grant_type: "authorization_code",
     }),
   });

@@ -26,7 +26,7 @@ async function notionRequest(
   });
 
   if (!connection) {
-    const authUrl = `${BASE_URL}:${BASE_PORT}/auth/notion?devId=${context.developerId}&userId=${context.endUserId}`;
+    const authUrl = `${BASE_URL}/auth/notion?devId=${context.developerId}&userId=${context.endUserId}`;
     return {
       content: [
         {

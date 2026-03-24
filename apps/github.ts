@@ -22,7 +22,7 @@ async function githubRequest(
   });
 
   if (!connection) {
-    const authUrl = `${BASE_URL}:${BASE_PORT}/auth/github?devId=${context.developerId}&userId=${context.endUserId}`;
+    const authUrl = `${BASE_URL}/auth/github?devId=${context.developerId}&userId=${context.endUserId}`;
     return {
       content: [
         {
