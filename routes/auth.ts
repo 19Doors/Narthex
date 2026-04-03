@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../db";
 import { connections, developers } from "../db/schema";
+import { and, eq } from "drizzle-orm";
 
 const auth = new Hono();
 
@@ -194,27 +195,20 @@ auth.get("/google/callback", async (c) => {
 
   if (data.error) return c.json({ error: data.error_description }, 400);
   await db
-    .insert(connections)
-    .values({
-      id: crypto.randomUUID(),
-      developerId: devId,
-      endUserId: userId,
-      appId: "google",
+    .update(connections)
+    .set({
       accessToken: data.access_token,
-      refreshToken: data.refresh_token || null,
+      // Only update refreshToken if Google actually sent a new one
+      ...(data.refresh_token && { refreshToken: data.refresh_token }),
+      updatedAt: new Date(),
     })
-    .onConflictDoUpdate({
-      target: [
-        connections.developerId,
-        connections.endUserId,
-        connections.appId,
-      ],
-      set: {
-        accessToken: data.access_token,
-        refreshToken: data.refresh_token || null,
-        updatedAt: new Date(), // drop this if you don't have the column
-      },
-    });
+    .where(
+      and(
+        eq(connections.developerId, devId),
+        eq(connections.endUserId, userId),
+        eq(connections.appId, "google"),
+      ),
+    );
 
   return c.html(
     `<html style="font-family: sans-serif; text-align: center; padding: 50px;"><body><h1 style="color: #4CAF50;">Google Connected! 🎉</h1><p>You can close this window and return to your chat.</p></body></html>`,

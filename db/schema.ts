@@ -11,25 +11,15 @@ export const developers = pgTable("developers", {
   apiKey: text("api_key").unique().notNull(),
 });
 
-export const connections = pgTable(
-  "connections",
-  {
-    id: text("id").primaryKey(),
-    developerId: uuid("developer_id")
-      .references(() => developers.id)
-      .notNull(),
-    endUserId: text("end_user_id").notNull(),
-    appId: text("app_id").notNull(),
-    accessToken: text("access_token").notNull(),
-    refreshToken: text("refresh_token"),
-    expiresAt: timestamp("expires_at"),
-    updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
-  },
-  (table) => [
-    uniqueIndex("uq_connections_dev_user_app").on(
-      table.developerId,
-      table.endUserId,
-      table.appId,
-    ),
-  ],
-);
+export const connections = pgTable("connections", {
+  id: text("id").primaryKey(),
+  developerId: uuid("developer_id")
+    .references(() => developers.id)
+    .notNull(),
+  endUserId: text("end_user_id").notNull(),
+  appId: text("app_id").notNull(),
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token"),
+  expiresAt: timestamp("expires_at"),
+  updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
+});
