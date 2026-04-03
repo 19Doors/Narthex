@@ -193,15 +193,28 @@ auth.get("/google/callback", async (c) => {
   const data = await response.json();
 
   if (data.error) return c.json({ error: data.error_description }, 400);
-
-  await db.insert(connections).values({
-    id: crypto.randomUUID(),
-    developerId: devId,
-    endUserId: userId,
-    appId: "google",
-    accessToken: data.access_token,
-    refreshToken: data.refresh_token || null,
-  });
+  await db
+    .insert(connections)
+    .values({
+      id: crypto.randomUUID(),
+      developerId: devId,
+      endUserId: userId,
+      appId: "google",
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token || null,
+    })
+    .onConflictDoUpdate({
+      target: [
+        connections.developerId,
+        connections.endUserId,
+        connections.appId,
+      ],
+      set: {
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token || null,
+        updatedAt: new Date(), // drop this if you don't have the column
+      },
+    });
 
   return c.html(
     `<html style="font-family: sans-serif; text-align: center; padding: 50px;"><body><h1 style="color: #4CAF50;">Google Connected! 🎉</h1><p>You can close this window and return to your chat.</p></body></html>`,
