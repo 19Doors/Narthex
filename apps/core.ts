@@ -79,85 +79,85 @@ export const coreApp = {
         };
       },
     },
-    // {
-    //   name: "nathrax_execute_tool",
-    //   description:
-    //     "Execute a specific tool discovered via nathrax_search_tools.",
-    //   schema: z.object({
-    //     tool_name: z.string().describe("The exact name of the tool to execute"),
-    //     parameters: z
-    //       .record(z.string(), z.unknown())
-    //       .describe("Parameters matching the tool's discovered schema"),
-    //   }),
-    //   execute: async (
-    //     {
-    //       tool_name,
-    //       parameters,
-    //     }: { tool_name: string; parameters: Record<string, unknown> },
-    //     context: unknown,
-    //   ) => {
-    //     const tool = allTools.find((t) => t.name === tool_name);
-    //
-    //     if (!tool) {
-    //       return {
-    //         content: [
-    //           {
-    //             type: "text",
-    //             text: `Tool '${tool_name}' not found. Use nathrax_search_tools first.`,
-    //           },
-    //         ],
-    //         isError: true,
-    //       };
-    //     }
-    //
-    //     try {
-    //       const validated = tool.schema.parse(parameters);
-    //       return await tool.execute(validated, context);
-    //     } catch (error: any) {
-    //       return {
-    //         content: [
-    //           {
-    //             type: "text",
-    //             text: `Execution Error: ${error.message}`,
-    //           },
-    //         ],
-    //         isError: true,
-    //       };
-    //     }
-    //   },
-    // },
     {
-      name: "nathrax_run_code",
-      description: `
-    Write JavaScript code to orchestrate multiple tool calls efficiently.
-    All tools are available as async functions by their exact name.
-    Use Promise.all for parallel calls.
-    The code must return a value — only that final value enters your context.
-    Example: 
-      const [a, b] = await Promise.all([tool_one({...}), tool_two({...})]);
-      return { a, b };
-
-		Also, use statusToShow argument!
-  `,
+      name: "nathrax_execute_tool",
+      description:
+        "Execute a specific tool discovered via nathrax_search_tools.",
       schema: z.object({
-        code: z.string().describe("JavaScript code. Must return a value."),
-        statusToShow: z
-          .string()
-          .describe(
-            "A short, creative, first-person status (4-8 words) describing exactly what you are doing right now. Be specific to the actual target. Examples: 'Purring through your repositories...', 'Dropping this into Notion...', 'Firing that email off...'",
-          ),
+        tool_name: z.string().describe("The exact name of the tool to execute"),
+        parameters: z
+          .record(z.string(), z.unknown())
+          .describe("Parameters matching the tool's discovered schema"),
       }),
-      execute: async ({ code }: { code: string }, context: unknown) => {
-        try {
-          const result = await runInSandbox(code, context);
-          return { content: [{ type: "text", text: result }] };
-        } catch (err: any) {
+      execute: async (
+        {
+          tool_name,
+          parameters,
+        }: { tool_name: string; parameters: Record<string, unknown> },
+        context: unknown,
+      ) => {
+        const tool = allTools.find((t) => t.name === tool_name);
+
+        if (!tool) {
           return {
-            content: [{ type: "text", text: `Sandbox Error: ${err.message}` }],
+            content: [
+              {
+                type: "text",
+                text: `Tool '${tool_name}' not found. Use nathrax_search_tools first.`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        try {
+          const validated = tool.schema.parse(parameters);
+          return await tool.execute(validated, context);
+        } catch (error: any) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Execution Error: ${error.message}`,
+              },
+            ],
             isError: true,
           };
         }
       },
     },
+    //   {
+    //     name: "nathrax_run_code",
+    //     description: `
+    //   Write JavaScript code to orchestrate multiple tool calls efficiently.
+    //   All tools are available as async functions by their exact name.
+    //   Use Promise.all for parallel calls.
+    //   The code must return a value — only that final value enters your context.
+    //   Example:
+    //     const [a, b] = await Promise.all([tool_one({...}), tool_two({...})]);
+    //     return { a, b };
+    //
+    // Also, use statusToShow argument!
+    // `,
+    //     schema: z.object({
+    //       code: z.string().describe("JavaScript code. Must return a value."),
+    //       statusToShow: z
+    //         .string()
+    //         .describe(
+    //           "A short, creative, first-person status (4-8 words) describing exactly what you are doing right now. Be specific to the actual target. Examples: 'Purring through your repositories...', 'Dropping this into Notion...', 'Firing that email off...'",
+    //         ),
+    //     }),
+    //     execute: async ({ code }: { code: string }, context: unknown) => {
+    //       try {
+    //         const result = await runInSandbox(code, context);
+    //         return { content: [{ type: "text", text: result }] };
+    //       } catch (err: any) {
+    //         return {
+    //           content: [{ type: "text", text: `Sandbox Error: ${err.message}` }],
+    //           isError: true,
+    //         };
+    //       }
+    //     },
+    //   },
   ],
 };
