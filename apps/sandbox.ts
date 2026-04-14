@@ -1,127 +1,49 @@
-// tools/sandbox.ts
-import { Worker, isMainThread, parentPort, workerData } from "worker_threads";
-import { fileURLToPath } from "url";
+import type { NathraxTool } from "../core/types";
 
-const __filename = fileURLToPath(import.meta.url);
-
-// ─── Main thread only ─────────────────────────────────────────────────────────
+// apps/sandbox.ts
 export async function runInSandbox(
   code: string,
-  agentContext: unknown,
+  tools: NathraxTool<any>[],
+  context: { developerId: string; endUserId: string },
 ): Promise<string> {
-  // Import here, not at module top — worker never reaches this function
-  const { allApps } = await import("./core");
-  const allTools = allApps.flatMap((app) => app.tools);
-  const toolNames = allTools.map((t) => t.name);
+  // Build callable wrappers for every tool
+  const toolFunctions: Record<string, (params: any) => Promise<any>> = {};
 
-  return new Promise((resolve, reject) => {
-    const worker = new Worker(__filename, {
-      workerData: { code, toolNames, isWorker: true },
-    });
+  for (const tool of tools) {
+    toolFunctions[tool.name] = async (params: any) => {
+      const validated = tool.schema.parse(params);
+      const result = await tool.execute(validated, context);
 
-    worker.on("message", async (msg) => {
-      if (msg.type === "tool_call") {
+      // Auto-parse JSON responses so scripts get real objects, not strings
+      const text = result?.content?.[0]?.text;
+      if (text) {
         try {
-          const tool = allTools.find((t) => t.name === msg.toolName);
-          if (!tool) throw new Error(`Tool '${msg.toolName}' not found`);
-
-          const validated = tool.schema.parse(msg.params);
-          const result = await tool.execute(validated, agentContext);
-
-          worker.postMessage({
-            type: "tool_result",
-            callId: msg.callId,
-            result: result.content[0].text,
-          });
-        } catch (err: any) {
-          worker.postMessage({
-            type: "tool_result",
-            callId: msg.callId,
-            error: err.message,
-          });
-        }
-      }
-
-      if (msg.type === "done") {
-        resolve(msg.result);
-        worker.terminate();
-      }
-
-      if (msg.type === "error") {
-        reject(new Error(msg.error));
-        worker.terminate();
-      }
-    });
-
-    worker.on("error", reject);
-
-    setTimeout(() => {
-      worker.terminate();
-      reject(new Error("Sandbox timeout: exceeded 10s"));
-    }, 10_000);
-  });
-}
-
-// ─── Worker thread only ───────────────────────────────────────────────────────
-if (!isMainThread && workerData?.isWorker) {
-  const { code, toolNames } = workerData as {
-    code: string;
-    toolNames: string[];
-  };
-
-  const pending = new Map<string, { resolve: Function; reject: Function }>();
-
-  parentPort!.on("message", (msg) => {
-    if (msg.type === "tool_result") {
-      const p = pending.get(msg.callId);
-      if (!p) return;
-      pending.delete(msg.callId);
-      if (msg.error) p.reject(new Error(msg.error));
-      else p.resolve(msg.result);
-    }
-  });
-
-  function makeTool(toolName: string) {
-    return (params: unknown): Promise<unknown> =>
-      new Promise((resolve, reject) => {
-        const callId = `${toolName}_${Date.now()}_${Math.random()}`;
-        pending.set(callId, { resolve, reject });
-        parentPort!.postMessage({
-          type: "tool_call",
-          toolName,
-          params,
-          callId,
-        });
-      }).then((raw) => {
-        try {
-          return JSON.parse(raw as string);
+          return JSON.parse(text);
         } catch {
-          return raw;
+          return text;
         }
-      });
+      }
+      return result;
+    };
   }
 
-  async function run() {
-    // Build tool stubs only from names passed via workerData — no imports needed
-    const toolStubs = Object.fromEntries(
-      toolNames.map((name) => [name, makeTool(name)]),
-    );
+  const toolNames = Object.keys(toolFunctions);
+  const toolValues = toolNames.map((n) => toolFunctions[n]);
 
-    try {
-      const fn = new Function(
-        ...toolNames, // named args
-        `return (async () => { ${code} })()`,
-      );
+  // Inject tools as named parameters — no global pollution
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  const fn = new AsyncFunction(...toolNames, `"use strict";\n${code}`);
 
-      const result = await fn(...toolNames.map((n) => toolStubs[n]));
-      parentPort!.postMessage({
-        type: "done",
-        result: JSON.stringify(result ?? null),
-      });
-    } catch (err: any) {
-      parentPort!.postMessage({ type: "error", error: err.message });
-    }
-  }
+  const timeoutGuard = new Promise<never>((_, reject) =>
+    setTimeout(
+      () => reject(new Error("Sandbox timeout: 30s exceeded")),
+      30_000,
+    ),
+  );
 
-  run();
+  const result = await Promise.race([fn(...toolValues), timeoutGuard]);
+
+  // Return compressed output — not a bloated full JSON dump
+  if (result === null || result === undefined) return "Done. No return value.";
+  return typeof result === "string" ? result : JSON.stringify(result, null, 2);
 }

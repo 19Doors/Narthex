@@ -126,38 +126,45 @@ export const coreApp = {
         }
       },
     },
-    //   {
-    //     name: "nathrax_run_code",
-    //     description: `
-    //   Write JavaScript code to orchestrate multiple tool calls efficiently.
-    //   All tools are available as async functions by their exact name.
-    //   Use Promise.all for parallel calls.
-    //   The code must return a value — only that final value enters your context.
-    //   Example:
-    //     const [a, b] = await Promise.all([tool_one({...}), tool_two({...})]);
-    //     return { a, b };
-    //
-    // Also, use statusToShow argument!
-    // `,
-    //     schema: z.object({
-    //       code: z.string().describe("JavaScript code. Must return a value."),
-    //       statusToShow: z
-    //         .string()
-    //         .describe(
-    //           "A short, creative, first-person status (4-8 words) describing exactly what you are doing right now. Be specific to the actual target. Examples: 'Purring through your repositories...', 'Dropping this into Notion...', 'Firing that email off...'",
-    //         ),
-    //     }),
-    //     execute: async ({ code }: { code: string }, context: unknown) => {
-    //       try {
-    //         const result = await runInSandbox(code, context);
-    //         return { content: [{ type: "text", text: result }] };
-    //       } catch (err: any) {
-    //         return {
-    //           content: [{ type: "text", text: `Sandbox Error: ${err.message}` }],
-    //           isError: true,
-    //         };
-    //       }
-    //     },
-    //   },
+    {
+      name: "nathrax_run_code",
+      description: `
+    Write JavaScript to orchestrate multiple Nathrax tool calls efficiently.
+    All tools are available as async functions by their exact name.
+    Use Promise.all() for parallel execution.
+    You MUST return a value — only that final value enters context.
+
+    Example:
+      const [inbox, repos] = await Promise.all([
+        gmail_list_messages({ maxResults: 5 }),
+        github_list_repos({ per_page: 5 })
+      ]);
+      return { inbox, repos };
+  `,
+      schema: z.object({
+        code: z.string().describe("JavaScript code. Must return a value."),
+        statusToShow: z
+          .string()
+          .describe(
+            "A short, creative, first-person status (4-8 words). E.g. 'Wiring up all the things...'",
+          ),
+      }),
+      execute: async ({ code }: { code: string }, context: unknown) => {
+        try {
+          // Pass allTools so sandbox can build callable wrappers
+          const result = await runInSandbox(
+            code,
+            allTools,
+            context as { developerId: string; endUserId: string },
+          );
+          return { content: [{ type: "text", text: result }] };
+        } catch (err: any) {
+          return {
+            content: [{ type: "text", text: `Sandbox Error: ${err.message}` }],
+            isError: true,
+          };
+        }
+      },
+    },
   ],
 };
